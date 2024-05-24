@@ -596,3 +596,11 @@ float getWhDrawn(void)
 {
     return wattHoursDrawn;
 }
+
+
+//GLEB ADDITION
+//BASED ON CURRENT CONVERSION DONE AT METHOD static int32_t currentMeterADCToCentiamps(const uint16_t src)
+int32_t getExternalTemperature(void) {
+    return getExternalTemperatureADC();
+    
+}

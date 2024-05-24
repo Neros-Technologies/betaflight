@@ -216,9 +216,14 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
     }
 
-    if (config->rssi.enabled) {
-        adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
-    }
+
+    adcOperatingConfig[ADC_NTEMP].tag = config->ntemp.ioTag;
+
+    // if (config->rssi.enabled) {
+    //     adcOperatingConfig[ADC_RSSI].tag = config->rssi.ioTag;  //RSSI_ADC_CHANNEL;
+    // }
+
+    
 
     if (config->external1.enabled) {
         adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;

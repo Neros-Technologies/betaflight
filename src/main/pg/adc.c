@@ -91,6 +91,10 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #endif
 #endif
 
+
+    adcConfig->ntemp.enabled = true;
+    adcConfig->ntemp.ioTag = IO_TAG(ADC_NTEMP_PIN);
+
 #ifdef ADC_RSSI_PIN
     adcConfig->rssi.enabled = true;
     adcConfig->rssi.ioTag = IO_TAG(ADC_RSSI_PIN);

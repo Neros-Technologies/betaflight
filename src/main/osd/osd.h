@@ -391,6 +391,9 @@ extern float osdGForce;
 #ifdef USE_ESC_SENSOR
 extern escSensorData_t *osdEscDataCombined;
 #endif
+#ifdef USE_N1_TEMP_SENSOR
+extern uint16_t osdTempValue;
+#endif
 extern uint16_t osdAuxValue;
 
 void osdInit(displayPort_t *osdDisplayPort, osdDisplayPortDevice_e displayPortDevice);

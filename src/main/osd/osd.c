@@ -148,6 +148,10 @@ static bool suppressStatsDisplay = false;
 
 static bool backgroundLayerSupported = false;
 
+#ifdef USE_N1_TEMP_SENSOR
+uint16_t osdTempValue = 10;
+#endif
+
 #ifdef USE_ESC_SENSOR
 escSensorData_t *osdEscDataCombined;
 #endif
@@ -374,7 +378,7 @@ void pgResetFn_osdConfig(osdConfig_t *osdConfig)
     osdConfig->link_quality_alarm = 80;
     osdConfig->cap_alarm  = 2200;
     osdConfig->alt_alarm  = 100; // meters or feet depend on configuration
-    osdConfig->esc_temp_alarm = ESC_TEMP_ALARM_OFF; // off by default
+    osdConfig->esc_temp_alarm = 100; // off by default
     osdConfig->esc_rpm_alarm = ESC_RPM_ALARM_OFF; // off by default
     osdConfig->esc_current_alarm = ESC_CURRENT_ALARM_OFF; // off by default
     osdConfig->core_temp_alarm = 70; // a temperature above 70C should produce a warning, lockups have been reported above 80C
@@ -929,7 +933,7 @@ static bool osdDisplayStat(int statistic, uint8_t displayRow)
         break;
 #endif
 
-#ifdef USE_ESC_SENSOR
+#if defined(USE_ESC_SENSOR) || defined(USE_N1_TEMP_SENSOR)
     case OSD_STAT_MAX_ESC_TEMP:
     {
         uint16_t ix = 0;
@@ -1302,6 +1306,10 @@ void osdProcessStats2(timeUs_t currentTimeUs)
 
         schedulerIgnoreTaskExecTime();
     }
+#ifdef USE_N1_TEMP_SENSOR
+osdTempValue = getExternalTemperature();
+#endif
+
 #ifdef USE_ESC_SENSOR
     if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
         osdEscDataCombined = getEscSensorData(ESC_SENSOR_COMBINED);

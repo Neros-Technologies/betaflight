@@ -88,4 +88,7 @@
 #error USE_LED_STRIP_64 is not supported for this MCU, please use USE_LED_STRIP
 #endif
 
+//GLEB ADDITION
+#define USE_N1_TEMP_SENSOR
+
 #define FLASH_PAGE_SIZE ((uint32_t)0x4000) // 16K sectors

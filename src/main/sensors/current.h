@@ -134,6 +134,9 @@ void currentMeterESCRefresh(int32_t lastUpdateAt);
 void currentMeterESCReadCombined(currentMeter_t *meter);
 void currentMeterESCReadMotor(uint8_t motorNumber, currentMeter_t *meter);
 
+//GLEB ADDITION
+int32_t getExternalTemperatureADC(void);
+
 void currentMeterMSPInit(void);
 void currentMeterMSPRefresh(timeUs_t currentTimeUs);
 void currentMeterMSPRead(currentMeter_t *meter);

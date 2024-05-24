@@ -119,6 +119,8 @@ uint16_t getBatteryAverageCellVoltage(void);
 uint16_t getBatterySagCellVoltage(void);
 
 bool isAmperageConfigured(void);
+//GLEB ADDITION
+int32_t getExternalTemperature(void);
 int32_t getAmperage(void);
 int32_t getAmperageLatest(void);
 int32_t getMAhDrawn(void);
