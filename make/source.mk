@@ -81,9 +81,6 @@ COMMON_SRC = \
             drivers/accgyro/gyro_sync.c \
             drivers/pwm_esc_detect.c \
             drivers/pwm_output.c \
-            drivers/rx/rx_spi.c \
-            drivers/rx/rx_xn297.c \
-            drivers/rx/rx_pwm.c \
             drivers/serial_softserial.c \
             fc/core.c \
             fc/rc.c \
@@ -107,27 +104,9 @@ COMMON_SRC = \
             io/serial_4way.c \
             io/serial_4way_avrootloader.c \
             io/serial_4way_stk500v2.c \
-            rx/ibus.c \
-            rx/jetiexbus.c \
             rx/msp.c \
-            rx/pwm.c \
-            rx/frsky_crc.c \
             rx/rx.c \
-            rx/rx_bind.c \
-            rx/rx_spi.c \
-            rx/rx_spi_common.c \
             rx/crsf.c \
-            rx/ghst.c \
-            rx/sbus.c \
-            rx/sbus_channels.c \
-            rx/spektrum.c \
-            rx/srxl2.c \
-            io/spektrum_vtx_control.c \
-            io/spektrum_rssi.c \
-            rx/sumd.c \
-            rx/sumh.c \
-            rx/xbus.c \
-            rx/fport.c \
             rx/msp_override.c \
             sensors/acceleration.c \
             sensors/acceleration_init.c \
@@ -164,13 +143,10 @@ COMMON_SRC = \
             drivers/vtx_common.c \
             drivers/vtx_table.c \
             io/dashboard.c \
-            io/displayport_frsky_osd.c \
             io/displayport_max7456.c \
             io/displayport_msp.c \
             io/displayport_oled.c \
-            io/displayport_srxl.c \
             io/displayport_crsf.c \
-            io/displayport_hott.c \
             io/frsky_osd.c \
             io/rcdevice_cam.c \
             io/rcdevice.c \
@@ -184,17 +160,9 @@ COMMON_SRC = \
             sensors/rangefinder.c \
             telemetry/telemetry.c \
             telemetry/crsf.c \
-            telemetry/ghst.c \
-            telemetry/srxl.c \
-            telemetry/frsky_hub.c \
-            telemetry/hott.c \
-            telemetry/jetiexbus.c \
-            telemetry/smartport.c \
             telemetry/ltm.c \
             telemetry/mavlink.c \
             telemetry/msp_shared.c \
-            telemetry/ibus.c \
-            telemetry/ibus_shared.c \
             sensors/esc_sensor.c \
             io/vtx.c \
             io/vtx_rtc6705.c \
@@ -265,18 +233,8 @@ SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             flight/mixer.c \
             flight/pid.c \
             flight/rpm_filter.c \
-            rx/ibus.c \
             rx/rx.c \
-            rx/rx_spi.c \
             rx/crsf.c \
-            rx/frsky_crc.c \
-            rx/sbus.c \
-            rx/sbus_channels.c \
-            rx/spektrum.c \
-            rx/srxl2.c \
-            rx/sumd.c \
-            rx/xbus.c \
-            rx/fport.c \
             scheduler/scheduler.c \
             sensors/acceleration.c \
             sensors/boardalignment.c \
@@ -363,7 +321,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
             osd/osd.c \
             osd/osd_elements.c \
             osd/osd_warnings.c \
-            rx/rx_bind.c \
             io/vtx_msp.c \
             cms/cms_menu_vtx_msp.c
 
@@ -383,7 +340,6 @@ SIZE_OPTIMISED_SRC := $(SIZE_OPTIMISED_SRC) \
 SPEED_OPTIMISED_SRC := $(SPEED_OPTIMISED_SRC) \
             drivers/bus_i2c_hal.c \
             drivers/bus_spi_ll.c \
-            rx/frsky_crc.c \
             drivers/max7456.c \
             drivers/pwm_output_dshot.c \
             drivers/pwm_output_dshot_shared.c \

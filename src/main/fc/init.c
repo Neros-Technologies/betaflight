@@ -105,7 +105,6 @@
 #include "io/asyncfatfs/asyncfatfs.h"
 #include "io/beeper.h"
 #include "io/dashboard.h"
-#include "io/displayport_frsky_osd.h"
 #include "io/displayport_max7456.h"
 #include "io/displayport_msp.h"
 #include "io/flashfs.h"
@@ -149,15 +148,11 @@
 #include "pg/pin_pull_up_down.h"
 #include "pg/pg.h"
 #include "pg/rx.h"
-#include "pg/rx_pwm.h"
-#include "pg/rx_spi.h"
 #include "pg/sdcard.h"
 #include "pg/vcd.h"
 #include "pg/vtx_io.h"
 
 #include "rx/rx.h"
-#include "rx/spektrum.h"
-
 #include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"

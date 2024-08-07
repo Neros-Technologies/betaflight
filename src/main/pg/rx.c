@@ -32,7 +32,6 @@
 #include "fc/rc.h"
 #include "fc/rc_controls.h"
 #include "rx/rx.h"
-#include "rx/rx_spi.h"
 
 PG_REGISTER_WITH_RESET_FN(rxConfig_t, rxConfig, PG_RX_CONFIG, 4);
 void pgResetFn_rxConfig(rxConfig_t *rxConfig)

@@ -123,16 +123,11 @@
 #include "pg/gyrodev.h"
 #include "pg/motor.h"
 #include "pg/rx.h"
-#include "pg/rx_spi.h"
-#ifdef USE_RX_EXPRESSLRS
-#include "pg/rx_spi_expresslrs.h"
-#endif
 #include "pg/usb.h"
 #include "pg/vcd.h"
 #include "pg/vtx_table.h"
 
 #include "rx/rx.h"
-#include "rx/rx_bind.h"
 #include "rx/msp.h"
 
 #include "scheduler/scheduler.h"
@@ -762,7 +757,7 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
     case MSP_ANALOG:
         sbufWriteU8(dst, (uint8_t)constrain(getLegacyBatteryVoltage(), 0, 255));
         sbufWriteU16(dst, (uint16_t)constrain(getMAhDrawn(), 0, 0xFFFF)); // milliamp hours drawn from battery
-        sbufWriteU16(dst, getRssi());
+        sbufWriteU16(dst, getRssiBand1());
         sbufWriteU16(dst, (int16_t)constrain(getAmperage(), -0x8000, 0x7FFF)); // send current in 0.01 A steps, range is -320A to 320A
         sbufWriteU16(dst, getBatteryVoltage());
         break;
@@ -1322,13 +1317,6 @@ case MSP_NAME:
             break;
         }
 #endif
-
-    case MSP_RC:
-        for (int i = 0; i < rxRuntimeState.channelCount; i++) {
-            sbufWriteU16(dst, rcData[i]);
-        }
-        break;
-
     case MSP_ATTITUDE:
         sbufWriteU16(dst, attitude.values.roll);
         sbufWriteU16(dst, attitude.values.pitch);
@@ -1650,13 +1638,6 @@ case MSP_NAME:
         sbufWriteU8(dst, failsafeConfig()->failsafe_switch_mode);
         sbufWriteU16(dst, failsafeConfig()->failsafe_throttle_low_delay);
         sbufWriteU8(dst, failsafeConfig()->failsafe_procedure);
-        break;
-
-    case MSP_RXFAIL_CONFIG:
-        for (int i = 0; i < rxRuntimeState.channelCount; i++) {
-            sbufWriteU8(dst, rxFailsafeChannelConfigs(i)->mode);
-            sbufWriteU16(dst, RXFAIL_STEP_TO_CHANNEL_VALUE(rxFailsafeChannelConfigs(i)->step));
-        }
         break;
 
     case MSP_RSSI_CONFIG:
@@ -3900,11 +3881,6 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
 
         break;
 #endif
-
-    case MSP_SET_TX_INFO:
-        setRssiMsp(sbufReadU8(src));
-
-        break;
 
 #if defined(USE_BOARD_INFO)
     case MSP_SET_BOARD_INFO:

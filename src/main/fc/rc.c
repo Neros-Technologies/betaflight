@@ -271,7 +271,8 @@ void updateRcRefreshRate(timeUs_t currentTimeUs)
     static timeUs_t lastRxTimeUs;
 
     timeDelta_t frameAgeUs;
-    timeDelta_t frameDeltaUs = rxGetFrameDelta(&frameAgeUs);
+    //TODO: CHECK THIS
+    timeDelta_t frameDeltaUs = rxGetFrameDeltaBand1(&frameAgeUs);
 
     if (!frameDeltaUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
         frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol

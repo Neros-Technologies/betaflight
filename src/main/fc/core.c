@@ -759,7 +759,8 @@ bool processRx(timeUs_t currentTimeUs)
             disarm(DISARM_REASON_SWITCH);
     }
 
-    updateRSSI(currentTimeUs);
+    updateRSSIBand1(currentTimeUs);
+    //updateRSSIBand2(currentTimeUs);
 
     if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
         failsafeStartMonitoring();

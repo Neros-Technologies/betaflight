@@ -36,7 +36,6 @@
 
 #include "pg/flash.h"
 #include "pg/max7456.h"
-#include "pg/rx_spi.h"
 #include "pg/sdcard.h"
 
 typedef struct spiPreinit_s {

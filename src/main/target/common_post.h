@@ -60,9 +60,6 @@
 
 #if defined(USE_RX_CC2500)
 
-#if !defined(USE_RX_SPI)
-#define USE_RX_SPI
-#endif
 
 #define USE_RX_CC2500_SPI_PA_LNA
 #define USE_RX_CC2500_SPI_DIVERSITY
@@ -537,10 +534,6 @@ extern uint8_t __config_end;
 #if !defined(USE_SERIALRX_CRSF)
 #define USE_SERIALRX_CRSF
 #endif
-#endif
-
-#if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)
-#define USE_RX_BIND
 #endif
 
 #ifndef USE_GPS
