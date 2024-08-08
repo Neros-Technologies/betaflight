@@ -76,13 +76,10 @@
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
-#include "pg/rx_spi.h"
 #include "pg/sdcard.h"
 #include "pg/vtx_table.h"
 
 #include "rx/rx.h"
-#include "rx/rx_spi.h"
-
 #include "scheduler/scheduler.h"
 
 #include "sensors/acceleration.h"

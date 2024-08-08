@@ -79,7 +79,7 @@ static uint8_t mspVtxPortIdentifier = 255;
 
 static bool isCrsfPortConfig(const serialPortConfig_t *portConfig)
 {
-    return portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & FUNCTION_VTX_MSP && rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
+    return portConfig->functionMask & FUNCTION_RX_SERIAL && portConfig->functionMask & FUNCTION_VTX_MSP && rxRuntimeStateBand1.serialrxProvider == SERIALRX_CRSF;
 }
 
 static bool isLowPowerDisarmed(void)

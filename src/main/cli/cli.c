@@ -144,18 +144,12 @@ bool cliMode = false;
 #include "pg/pg.h"
 #include "pg/pg_ids.h"
 #include "pg/rx.h"
-#include "pg/rx_pwm.h"
-#include "pg/rx_spi_cc2500.h"
-#include "pg/rx_spi_expresslrs.h"
 #include "pg/serial_uart.h"
 #include "pg/sdio.h"
 #include "pg/timerio.h"
 #include "pg/timerup.h"
 #include "pg/usb.h"
 #include "pg/vtx_table.h"
-
-#include "rx/rx_bind.h"
-#include "rx/rx_spi.h"
 
 #include "scheduler/scheduler.h"
 
@@ -168,8 +162,6 @@ bool cliMode = false;
 #include "sensors/gyro.h"
 #include "sensors/gyro_init.h"
 #include "sensors/sensors.h"
-
-#include "telemetry/frsky_hub.h"
 #include "telemetry/telemetry.h"
 
 #include "cli.h"

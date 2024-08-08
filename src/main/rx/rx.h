@@ -171,15 +171,18 @@ typedef enum {
 
 extern linkQualitySource_e linkQualitySource;
 
-extern rxRuntimeState_t rxRuntimeState; //!!TODO remove this extern, only needed once for channelCount
+extern rxRuntimeState_t rxRuntimeStateBand1; //!!TODO remove this extern, only needed once for channelCount
+extern rxRuntimeState_t rxRuntimeStateBand2;
 
 void rxInit(void);
 void rxProcessPending(bool state);
-bool rxUpdateCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
-void rxFrameCheck(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
+bool rxUpdateCheckBand1(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
+bool rxUpdateCheckBand2(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
+void rxFrameCheckBand1(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
+void rxFrameCheckBand2(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
-bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
+bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs,int band);
 
 struct rxConfig_s;
 
@@ -187,34 +190,52 @@ void parseRcChannels(const char *input, struct rxConfig_s *rxConfig);
 
 #define RSSI_MAX_VALUE 1023
 
-void setRssiDirect(uint16_t newRssi, rssiSource_e source);
-void setRssi(uint16_t rssiValue, rssiSource_e source);
+void setRssiDirectBand1(uint16_t newRssi, rssiSource_e source);
+void setRssiDirectBand2(uint16_t newRssi, rssiSource_e source);
+void setRssiBand1(uint16_t rssiValue, rssiSource_e source);
+void setRssiBand2(uint16_t rssiValue, rssiSource_e source);
 void setRssiMsp(uint8_t newMspRssi);
-void updateRSSI(timeUs_t currentTimeUs);
-uint16_t getRssi(void);
-uint8_t getRssiPercent(void);
+void updateRSSIBand1(timeUs_t currentTimeUs);
+void updateRSSIBand2(timeUs_t currentTimeUs);
+uint16_t getRssiBand1(void);
+uint16_t getRssiBand2(void);
+uint8_t getRssiPercentBand1(void);
+uint8_t getRssiPercentBand2(void);
 bool isRssiConfigured(void);
 
 #define LINK_QUALITY_MAX_VALUE 1023
 
-uint16_t rxGetLinkQuality(void);
-void setLinkQualityDirect(uint16_t linkqualityValue);
-uint16_t rxGetLinkQualityPercent(void);
+uint16_t rxGetLinkQualityBand1(void);
+uint16_t rxGetLinkQualityBand2(void);
+void setLinkQualityDirectBand1(uint16_t linkqualityValue);
+void setLinkQualityDirectBand2(uint16_t linkqualityValue);
+uint16_t rxGetLinkQualityPercentBand1(void);
+uint16_t rxGetLinkQualityPercentBand2(void);
 
 #ifdef USE_RX_RSSI_DBM
-int16_t getRssiDbm(void);
-void setRssiDbm(int16_t newRssiDbm, rssiSource_e source);
-void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source);
+int16_t getRssiDbmBand1(void);
+void setRssiDbmBand1(int16_t newRssiDbm, rssiSource_e source);
+void setRssiDbmDirectBand1(int16_t newRssiDbm, rssiSource_e source);
+
+int16_t getRssiDbmBand2(void);
+void setRssiDbmBand2(int16_t newRssiDbm, rssiSource_e source);
+void setRssiDbmDirectBand2(int16_t newRssiDbm, rssiSource_e source);
 #endif //USE_RX_RSSI_DBM
 
 #ifdef USE_RX_RSNR
-int16_t getRsnr(void);
-void setRsnr(int16_t newRsnr);
-void setRsnrDirect(int16_t newRsnr);
+int16_t getRsnrBand1(void);
+void setRsnrBand1(int16_t newRsnr);
+void setRsnrDirectBand1(int16_t newRsnr);
+
+int16_t getRsnrBand2(void);
+void setRsnrBand2(int16_t newRsnr);
+void setRsnrDirectBand2(int16_t newRsnr);
 #endif //USE_RX_RSNR
 
-void rxSetRfMode(uint8_t rfModeValue);
-uint8_t rxGetRfMode(void);
+void rxSetRfModeBand1(uint8_t rfModeValue);
+void rxSetRfModeBand2(uint8_t rfModeValue);
+uint8_t rxGetRfModeBand1(void);
+uint8_t rxGetRfModeBand2(void);
 
 void rxSetUplinkTxPwrMw(uint16_t uplinkTxPwrMwValue);
 uint16_t rxGetUplinkTxPwrMw(void);
@@ -224,6 +245,8 @@ void resetAllRxChannelRangeConfigurations(rxChannelRangeConfig_t *rxChannelRange
 void suspendRxSignal(void);
 void resumeRxSignal(void);
 
-timeDelta_t rxGetFrameDelta(timeDelta_t *frameAgeUs);
+timeDelta_t rxGetFrameDeltaBand1(timeDelta_t *frameAgeUs);
+timeDelta_t rxGetFrameDeltaBand2(timeDelta_t *frameAgeUs);
 
-timeUs_t rxFrameTimeUs(void);
+timeUs_t rxFrameTimeUsBand1(void);
+timeUs_t rxFrameTimeUsBand2(void);

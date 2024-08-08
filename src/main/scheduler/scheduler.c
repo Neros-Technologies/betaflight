@@ -507,7 +507,8 @@ FAST_CODE void scheduler(void)
             // Check for incoming RX data. Don't do this in the checker as that is called repeatedly within
             // a given gyro loop, and ELRS takes a long time to process this and so can only be safely processed
             // before the checkers
-            rxFrameCheck(currentTimeUs, cmpTimeUs(currentTimeUs, getTask(TASK_RX)->lastExecutedAtUs));
+            rxFrameCheckBand1(currentTimeUs, cmpTimeUs(currentTimeUs, getTask(TASK_RX_1)->lastExecutedAtUs));
+            rxFrameCheckBand2(currentTimeUs, cmpTimeUs(currentTimeUs, getTask(TASK_RX_2)->lastExecutedAtUs));
 
             // Check for failsafe conditions without reliance on the RX task being well behaved
             if (cmp32(millis(), lastFailsafeCheckMs) > PERIOD_RXDATA_FAILURE) {
@@ -677,7 +678,7 @@ FAST_CODE void scheduler(void)
                 }
 #endif  // USE_LATE_TASK_STATISTICS
 
-                if ((currentTask - tasks) == TASK_RX) {
+                if ((currentTask - tasks) == TASK_RX_1) {
                     skippedRxAttempts = 0;
                 }
 #ifdef USE_OSD
@@ -700,7 +701,7 @@ FAST_CODE void scheduler(void)
 #ifdef USE_OSD
                        (((selectedTask - tasks) == TASK_OSD) && (TASK_AGE_EXPEDITE_OSD != 0) && (++skippedOSDAttempts > TASK_AGE_EXPEDITE_OSD)) ||
 #endif
-                       (((selectedTask - tasks) == TASK_RX) && (TASK_AGE_EXPEDITE_RX != 0) && (++skippedRxAttempts > TASK_AGE_EXPEDITE_RX))) {
+                       (((selectedTask - tasks) == TASK_RX_1) && (TASK_AGE_EXPEDITE_RX != 0) && (++skippedRxAttempts > TASK_AGE_EXPEDITE_RX))) {
                 // If a task has been unable to run, then reduce it's recorded estimated run time to ensure
                 // it's ultimate scheduling
                 selectedTask->anticipatedExecutionTime *= TASK_AGE_EXPEDITE_SCALE;

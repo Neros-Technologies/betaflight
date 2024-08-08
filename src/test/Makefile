@@ -256,10 +256,6 @@ rx_crsf_unittest_SRC := \
 		$(USER_DIR)/drivers/serial.c
 
 
-rx_ibus_unittest_SRC := \
-		$(USER_DIR)/rx/ibus.c
-
-
 rx_ranges_unittest_SRC := \
 		$(USER_DIR)/common/bitarray.c \
 		$(USER_DIR)/common/crc.c \

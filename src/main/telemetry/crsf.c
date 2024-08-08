@@ -79,7 +79,8 @@
 
 static bool crsfTelemetryEnabled;
 static bool deviceInfoReplyPending;
-static uint8_t crsfFrame[CRSF_FRAME_SIZE_MAX];
+static uint8_t crsfFrameBand1[CRSF_FRAME_SIZE_MAX];
+//static uint8_t crsfFrameBand2[CRSF_FRAME_SIZE_MAX];
 
 #if defined(USE_MSP_OVER_TELEMETRY)
 typedef struct mspBuffer_s {
@@ -196,16 +197,16 @@ bool handleCrsfMspFrameBuffer(mspResponseFnPtr responseFn)
 
 static void crsfInitializeFrame(sbuf_t *dst)
 {
-    dst->ptr = crsfFrame;
-    dst->end = ARRAYEND(crsfFrame);
+    dst->ptr = crsfFrameBand1;
+    dst->end = ARRAYEND(crsfFrameBand1);
 
     sbufWriteU8(dst, CRSF_SYNC_BYTE);
 }
 
 static void crsfFinalize(sbuf_t *dst)
 {
-    crc8_dvb_s2_sbuf_append(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
-    sbufSwitchToReader(dst, crsfFrame);
+    crc8_dvb_s2_sbuf_append(dst, &crsfFrameBand1[2]); // start at byte 2, since CRC does not include device address and frame length
+    sbufSwitchToReader(dst, crsfFrameBand1);
     // write the telemetry frame to the receiver.
     crsfRxWriteTelemetryData(sbufPtr(dst), sbufBytesRemaining(dst));
 }
@@ -856,8 +857,8 @@ void handleCrsfTelemetry(timeUs_t currentTimeUs)
 #if defined(UNIT_TEST) || defined(USE_RX_EXPRESSLRS)
 static int crsfFinalizeBuf(sbuf_t *dst, uint8_t *frame)
 {
-    crc8_dvb_s2_sbuf_append(dst, &crsfFrame[2]); // start at byte 2, since CRC does not include device address and frame length
-    sbufSwitchToReader(dst, crsfFrame);
+    crc8_dvb_s2_sbuf_append(dst, &crsfFrameBand1[2]); // start at byte 2, since CRC does not include device address and frame length
+    sbufSwitchToReader(dst, crsfFrameBand1);
     const int frameSize = sbufBytesRemaining(dst);
     for (int ii = 0; sbufBytesRemaining(dst); ++ii) {
         frame[ii] = sbufReadU8(dst);

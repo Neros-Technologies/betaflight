@@ -615,7 +615,7 @@ static void osdUpdateStats(void)
         stats.max_current = value;
     }
 
-    value = getRssiPercent();
+    value = getRssiPercentBand1();
     if (stats.min_rssi > value) {
         stats.min_rssi = value;
     }
@@ -632,21 +632,21 @@ static void osdUpdateStats(void)
 #endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    value = rxGetLinkQualityPercent();
+    value = rxGetLinkQualityPercentBand1();
     if (stats.min_link_quality > value) {
         stats.min_link_quality = value;
     }
 #endif
 
 #ifdef USE_RX_RSSI_DBM
-    value = getRssiDbm();
+    value = getRssiDbmBand1();
     if (stats.min_rssi_dbm > value) {
         stats.min_rssi_dbm = value;
     }
 #endif
 
 #ifdef USE_RX_RSNR
-    value = getRsnr();
+    value = getRsnrBand1();
     if (stats.min_rsnr > value) {
         stats.min_rsnr = value;
     }

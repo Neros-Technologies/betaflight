@@ -26,5 +26,6 @@ void tasksInitData(void);
 void tasksInit(void);
 task_t *getTask(unsigned taskId);
 
-bool taskUpdateRxMainInProgress();
+bool taskUpdateRxMainInProgressBand1();
+bool taskUpdateRxMainInProgressBand2();
 

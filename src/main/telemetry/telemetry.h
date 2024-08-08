@@ -35,8 +35,6 @@
 
 #include "rx/rx.h"
 
-#include "telemetry/ibus_shared.h"
-
 typedef enum {
     FRSKY_FORMAT_DMS = 0,
     FRSKY_FORMAT_NMEA
@@ -82,7 +80,7 @@ typedef struct telemetryConfig_s {
     uint8_t hottAlarmSoundInterval;
     uint8_t pidValuesAsTelemetry;
     uint8_t report_cell_voltage;
-    uint8_t flysky_sensors[IBUS_SENSOR_COUNT];
+    uint8_t flysky_sensors[1];
     uint16_t mavlink_mah_as_heading_divisor;
     uint32_t disabledSensors; // bit flags
 } telemetryConfig_t;

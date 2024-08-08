@@ -48,16 +48,10 @@
 #include "rx/rx.h"
 
 #include "telemetry/telemetry.h"
-#include "telemetry/frsky_hub.h"
-#include "telemetry/hott.h"
 #include "telemetry/smartport.h"
 #include "telemetry/ltm.h"
-#include "telemetry/jetiexbus.h"
-#include "telemetry/mavlink.h"
+
 #include "telemetry/crsf.h"
-#include "telemetry/ghst.h"
-#include "telemetry/srxl.h"
-#include "telemetry/ibus.h"
 #include "telemetry/msp_shared.h"
 
 PG_REGISTER_WITH_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig, PG_TELEMETRY_CONFIG, 5);
@@ -73,54 +67,16 @@ PG_RESET_TEMPLATE(telemetryConfig_t, telemetryConfig,
     .hottAlarmSoundInterval = 5,
     .pidValuesAsTelemetry = 0,
     .report_cell_voltage = false,
-    .flysky_sensors = {
-            IBUS_SENSOR_TYPE_TEMPERATURE,
-            IBUS_SENSOR_TYPE_RPM_FLYSKY,
-            IBUS_SENSOR_TYPE_EXTERNAL_VOLTAGE
-    },
+    .flysky_sensors = {0},
     .disabledSensors = ESC_SENSOR_ALL | SENSOR_CAP_USED,
     .mavlink_mah_as_heading_divisor = 0,
 );
 
 void telemetryInit(void)
 {
-#ifdef USE_TELEMETRY_FRSKY_HUB
-    initFrSkyHubTelemetry();
-#endif
-#ifdef USE_TELEMETRY_HOTT
-    initHoTTTelemetry();
-#endif
-#ifdef USE_TELEMETRY_SMARTPORT
-    initSmartPortTelemetry();
-#endif
-#ifdef USE_TELEMETRY_LTM
-    initLtmTelemetry();
-#endif
-#ifdef USE_TELEMETRY_JETIEXBUS
-    initJetiExBusTelemetry();
-#endif
-#ifdef USE_TELEMETRY_MAVLINK
-    initMAVLinkTelemetry();
-#endif
-#ifdef USE_TELEMETRY_GHST
-    initGhstTelemetry();
-#endif
 #ifdef USE_TELEMETRY_CRSF
     initCrsfTelemetry();
-#if defined(USE_MSP_OVER_TELEMETRY)
-    initCrsfMspBuffer();
 #endif
-#endif
-#ifdef USE_TELEMETRY_SRXL
-    initSrxlTelemetry();
-#endif
-#ifdef USE_TELEMETRY_IBUS
-    initIbusTelemetry();
-#endif
-#if defined(USE_MSP_OVER_TELEMETRY)
-    initSharedMsp();
-#endif
-
     telemetryCheckState();
 }
 

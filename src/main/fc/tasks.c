@@ -178,38 +178,45 @@ typedef enum {
     RX_STATE_COUNT
 } rxState_e;
 
-static rxState_e rxState = RX_STATE_CHECK;
+static rxState_e rxStateBand1 = RX_STATE_CHECK;
+static rxState_e rxStateBand2 = RX_STATE_CHECK;
 
-bool taskUpdateRxMainInProgress(void)
+bool taskUpdateRxMainInProgressBand1(void)
 {
-    return (rxState != RX_STATE_CHECK);
+    return (rxStateBand1 != RX_STATE_CHECK);
 }
 
-static void taskUpdateRxMain(timeUs_t currentTimeUs)
+bool taskUpdateRxMainInProgressBand2(void)
+{
+    return (rxStateBand2 != RX_STATE_CHECK);
+}
+
+
+void taskUpdateRxMain(timeUs_t currentTimeUs, rxState_e* rxState,int band)
 {
     static timeDelta_t rxStateDurationFractionUs[RX_STATE_COUNT];
     timeDelta_t executeTimeUs;
-    rxState_e oldRxState = rxState;
+    rxState_e oldRxState = *rxState;
     timeDelta_t anticipatedExecutionTime;
 
     // Where we are using a state machine call schedulerIgnoreTaskExecRate() for all states bar one
-    if (rxState != RX_STATE_UPDATE) {
+    if (*rxState != RX_STATE_UPDATE) {
         schedulerIgnoreTaskExecRate();
     }
 
-    switch (rxState) {
+    switch (*rxState) {
     default:
     case RX_STATE_CHECK:
-        if (!processRx(currentTimeUs)) {
-            rxState = RX_STATE_CHECK;
+        if (!processRx(currentTimeUs,band)) {
+            *rxState = RX_STATE_CHECK;
             break;
         }
-        rxState = RX_STATE_MODES;
+        *rxState = RX_STATE_MODES;
         break;
 
     case RX_STATE_MODES:
         processRxModes(currentTimeUs);
-        rxState = RX_STATE_UPDATE;
+        *rxState = RX_STATE_UPDATE;
         break;
 
     case RX_STATE_UPDATE:
@@ -222,7 +229,7 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
             sendRcDataToHid();
         }
 #endif
-        rxState = RX_STATE_CHECK;
+        *rxState = RX_STATE_CHECK;
         break;
     }
 
@@ -247,8 +254,18 @@ static void taskUpdateRxMain(timeUs_t currentTimeUs)
         debug[oldRxState] = rxStateDurationFractionUs[oldRxState] >> RX_TASK_DECAY_SHIFT;
     }
 
-    schedulerSetNextStateTime(rxStateDurationFractionUs[rxState] >> RX_TASK_DECAY_SHIFT);
+    schedulerSetNextStateTime(rxStateDurationFractionUs[*rxState] >> RX_TASK_DECAY_SHIFT);
 }
+
+static void taskUpdateRxMainBand1(timeUs_t currentTimeUs){
+    
+    taskUpdateRxMain(currentTimeUs,&rxStateBand1,0);
+}
+
+static void taskUpdateRxMainBand2(timeUs_t currentTimeUs){
+    taskUpdateRxMain(currentTimeUs,&rxStateBand2,1);
+}
+
 
 #ifdef USE_GPS_RESCUE
 static void taskGpsRescue(timeUs_t currentTimeUs)
@@ -375,7 +392,8 @@ task_attribute_t task_attributes[TASK_COUNT] = {
     [TASK_ATTITUDE] = DEFINE_TASK("ATTITUDE", NULL, NULL, imuUpdateAttitude, TASK_PERIOD_HZ(100), TASK_PRIORITY_MEDIUM),
 #endif
 
-    [TASK_RX] = DEFINE_TASK("RX", NULL, rxUpdateCheck, taskUpdateRxMain, TASK_PERIOD_HZ(33), TASK_PRIORITY_HIGH), // If event-based scheduling doesn't work, fallback to periodic scheduling
+    [TASK_RX_1] = DEFINE_TASK("RX_1", NULL, rxUpdateCheckBand1, taskUpdateRxMainBand1, TASK_PERIOD_HZ(33), TASK_PRIORITY_HIGH), // If event-based scheduling doesn't work, fallback to periodic scheduling
+    [TASK_RX_2] = DEFINE_TASK("RX_2", NULL, rxUpdateCheckBand2, taskUpdateRxMainBand2, TASK_PERIOD_HZ(33), TASK_PRIORITY_HIGH),
     [TASK_DISPATCH] = DEFINE_TASK("DISPATCH", NULL, NULL, dispatchProcess, TASK_PERIOD_HZ(1000), TASK_PRIORITY_HIGH),
 
 #ifdef USE_BEEPER
@@ -524,7 +542,8 @@ void tasksInit(void)
     }
 #endif
 
-    setTaskEnabled(TASK_RX, true);
+    setTaskEnabled(TASK_RX_1, true);
+    setTaskEnabled(TASK_RX_2, true);
 
     setTaskEnabled(TASK_DISPATCH, dispatchIsEnabled());
 
@@ -559,10 +578,7 @@ void tasksInit(void)
 #ifdef USE_TELEMETRY
     if (featureIsEnabled(FEATURE_TELEMETRY)) {
         setTaskEnabled(TASK_TELEMETRY, true);
-        if (rxRuntimeState.serialrxProvider == SERIALRX_JETIEXBUS) {
-            // Reschedule telemetry to 500hz for Jeti Exbus
-            rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
-        } else if (rxRuntimeState.serialrxProvider == SERIALRX_CRSF) {
+        if (rxRuntimeStateBand1.serialrxProvider == SERIALRX_CRSF) {
             // Reschedule telemetry to 500hz, 2ms for CRSF
             rescheduleTask(TASK_TELEMETRY, TASK_PERIOD_HZ(500));
         }
@@ -621,7 +637,7 @@ void tasksInit(void)
 #endif
 
 #ifdef USE_CRSF_V3
-    const bool useCRSF = rxRuntimeState.serialrxProvider == SERIALRX_CRSF;
+    const bool useCRSF = rxRuntimeStateBand1.serialrxProvider == SERIALRX_CRSF;
     setTaskEnabled(TASK_SPEED_NEGOTIATION, useCRSF);
 #endif
 }

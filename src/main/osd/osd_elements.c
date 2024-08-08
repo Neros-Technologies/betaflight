@@ -898,8 +898,8 @@ static void osdElementCurrentDraw(osdElementParms_t *element)
 
 static void osdElementDebug(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "BAND %d", slctRx);
-    //tfp_sprintf(element->buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
+    //tfp_sprintf(element->buff, "BAND %d", slctRx);
+    tfp_sprintf(element->buff, "DBG %5d %5d %5d %5d", debug[0], debug[1], debug[2], debug[3]);
 }
 
 static void osdElementDisarmed(osdElementParms_t *element)
@@ -1150,26 +1150,19 @@ static void osdBackgroundHorizonSidebars(osdElementParms_t *element)
 #ifdef USE_RX_LINK_QUALITY_INFO
 static void osdElementLinkQuality(osdElementParms_t *element)
 {
-    uint16_t osdLinkQuality = 0;
+    uint16_t osdLinkQualityBand1 = 0;
+    uint16_t osdLinkQualityBand2 = 0;
 
-    if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
+    if ((rxGetLinkQualityPercentBand1() < osdConfig()->link_quality_alarm)||(rxGetLinkQualityPercentBand2() < osdConfig()->link_quality_alarm)) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
 
     if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
-        osdLinkQuality = rxGetLinkQuality();
-        const uint8_t osdRfMode = rxGetRfMode();
-        tfp_sprintf(element->buff, "%c%1d:%2d", SYM_LINK_QUALITY, osdRfMode, osdLinkQuality);
-    } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
-        osdLinkQuality = rxGetLinkQuality();
-        tfp_sprintf(element->buff, "%c%2d", SYM_LINK_QUALITY, osdLinkQuality);
-    } else { // 0-9
-        osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
-        if (osdLinkQuality >= 10) {
-            osdLinkQuality = 9;
-        }
-        tfp_sprintf(element->buff, "%c%1d", SYM_LINK_QUALITY, osdLinkQuality);
-    }
+        osdLinkQualityBand1 = rxGetLinkQualityBand1();
+        const uint8_t osdRfModeBand1 = rxGetRfModeBand1();
+        const uint8_t osdRfModeBand2 = rxGetRfModeBand2();
+        tfp_sprintf(element->buff, "%c%1d|%2d -- %c%1d|%2d", SYM_LINK_QUALITY, osdRfModeBand1, osdLinkQualityBand1,osdRfModeBand2, osdLinkQualityBand2);
+    } 
 }
 #endif // USE_RX_LINK_QUALITY_INFO
 
@@ -1460,16 +1453,20 @@ static void osdElementRemainingTimeEstimate(osdElementParms_t *element)
 
 static void osdElementRssi(osdElementParms_t *element)
 {
-    uint16_t osdRssi = getRssi() * 100 / 1024; // change range
-    if (osdRssi >= 100) {
-        osdRssi = 99;
+    uint16_t osdRssiBand1 = getRssiBand1() * 100 / 1024; // change range
+    if (osdRssiBand1 >= 100) {
+        osdRssiBand1 = 99;
     }
 
-    if (getRssiPercent() < osdConfig()->rssi_alarm) {
+    uint16_t osdRssiBand2 = getRssiBand2() * 100 / 1024; // change range
+    if (osdRssiBand2 >= 100) {
+        osdRssiBand2 = 99;
+    }
+
+    if ((getRssiPercentBand1() < osdConfig()->rssi_alarm)||(getRssiPercentBand2() < osdConfig()->rssi_alarm)) {
         element->attr = DISPLAYPORT_SEVERITY_CRITICAL;
     }
-
-    tfp_sprintf(element->buff, "%c%2d", SYM_RSSI, osdRssi);
+    tfp_sprintf(element->buff, "%c%2d -- %c%2d", SYM_RSSI, osdRssiBand1,SYM_RSSI, osdRssiBand2);
 }
 
 #ifdef USE_RTC_TIME
@@ -1482,14 +1479,14 @@ static void osdElementRtcTime(osdElementParms_t *element)
 #ifdef USE_RX_RSSI_DBM
 static void osdElementRssiDbm(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRssiDbm());
+    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRssiDbmBand1());
 }
 #endif // USE_RX_RSSI_DBM
 
 #ifdef USE_RX_RSNR
 static void osdElementRsnr(osdElementParms_t *element)
 {
-    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRsnr());
+    tfp_sprintf(element->buff, "%c%3d", SYM_RSSI, getRsnrBand1());
 }
 #endif // USE_RX_RSNR
 
@@ -1618,36 +1615,6 @@ static void osdElementWarnings(osdElementParms_t *element)
         CLR_BLINK(OSD_WARNINGS);
     }
 
-#ifdef USE_CRAFTNAME_MSGS
-    // Injects data into the CraftName variable for systems which limit
-    // the available MSP data field in their OSD.
-    if (osdConfig()->osd_craftname_msgs == true) {
-        // if warning is not set, or blink is off, then display LQ & RSSI
-        if (blinkState || (strlen(element->buff) == 0)) {
-#ifdef USE_RX_LINK_QUALITY_INFO
-            // replicate the LQ functionality without the special font symbols
-            uint16_t osdLinkQuality = 0;
-            if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) { // 0-99
-                osdLinkQuality = rxGetLinkQuality();
-#ifdef USE_RX_RSSI_DBM
-                const uint8_t osdRfMode = rxGetRfMode();
-                tfp_sprintf(element->buff, "LQ %2d:%03d %3d", osdRfMode, osdLinkQuality, getRssiDbm());
-            } else if (linkQualitySource == LQ_SOURCE_RX_PROTOCOL_GHST) { // 0-100
-                osdLinkQuality = rxGetLinkQuality();
-                tfp_sprintf(element->buff, "LQ %03d %3d", osdLinkQuality, getRssiDbm());
-#endif
-            } else { // 0-9
-                osdLinkQuality = rxGetLinkQuality() * 10 / LINK_QUALITY_MAX_VALUE;
-                if (osdLinkQuality >= 10) {
-                    osdLinkQuality = 9;
-                }
-                tfp_sprintf(element->buff, "LQ %1d", osdLinkQuality);
-            }
-#endif // USE_RX_LINK_QUALITY_INFO
-        }
-        strncpy(pilotConfigMutable()->craftName, element->buff, MAX_NAME_LENGTH - 1);
-    }
-#endif // USE_CRAFTNAME_MSGS
 }
 
 #ifdef USE_MSP_DISPLAYPORT
@@ -2102,14 +2069,14 @@ void osdUpdateAlarms(void)
 
     int32_t alt = osdGetMetersToSelectedUnit(getEstimatedAltitudeCm()) / 100;
 
-    if (getRssiPercent() < osdConfig()->rssi_alarm) {
+    if ((getRssiPercentBand1() < osdConfig()->rssi_alarm)||(getRssiPercentBand2() < osdConfig()->rssi_alarm)) {
         SET_BLINK(OSD_RSSI_VALUE);
     } else {
         CLR_BLINK(OSD_RSSI_VALUE);
     }
 
 #ifdef USE_RX_LINK_QUALITY_INFO
-    if (rxGetLinkQualityPercent() < osdConfig()->link_quality_alarm) {
+    if ((rxGetLinkQualityPercentBand1() < osdConfig()->link_quality_alarm) || (rxGetLinkQualityPercentBand2() < osdConfig()->link_quality_alarm)) {
         SET_BLINK(OSD_LINK_QUALITY);
     } else {
         CLR_BLINK(OSD_LINK_QUALITY);
