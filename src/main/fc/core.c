@@ -758,7 +758,8 @@ bool processRx(timeUs_t currentTimeUs)
         if (!IS_RC_MODE_ACTIVE(BOXARM))
             disarm(DISARM_REASON_SWITCH);
     }
-
+    //This is fine to keep as a single method -- this is just used to change the smoothing for RSSI
+    //but RSSI is set in a seperate place!
     updateRSSI(currentTimeUs);
 
     if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
