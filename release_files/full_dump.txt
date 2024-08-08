@@ -225,8 +225,6 @@ feature -RANGEFINDER
 feature -TELEMETRY
 feature -3D
 feature -RX_PARALLEL_PWM
-feature -RX_MSP
-feature -RSSI_ADC
 feature -LED_STRIP
 feature -DISPLAY
 feature -OSD

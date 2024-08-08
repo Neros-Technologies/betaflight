@@ -192,7 +192,7 @@ bool taskUpdateRxMainInProgressBand2(void)
 }
 
 
-void taskUpdateRxMain(timeUs_t currentTimeUs, rxState_e* rxState)
+void taskUpdateRxMain(timeUs_t currentTimeUs, rxState_e* rxState,int band)
 {
     static timeDelta_t rxStateDurationFractionUs[RX_STATE_COUNT];
     timeDelta_t executeTimeUs;
@@ -207,7 +207,7 @@ void taskUpdateRxMain(timeUs_t currentTimeUs, rxState_e* rxState)
     switch (*rxState) {
     default:
     case RX_STATE_CHECK:
-        if (!processRx(currentTimeUs)) {
+        if (!processRx(currentTimeUs,band)) {
             *rxState = RX_STATE_CHECK;
             break;
         }
@@ -259,11 +259,11 @@ void taskUpdateRxMain(timeUs_t currentTimeUs, rxState_e* rxState)
 
 static void taskUpdateRxMainBand1(timeUs_t currentTimeUs){
     
-    taskUpdateRxMain(currentTimeUs,&rxStateBand1);
+    taskUpdateRxMain(currentTimeUs,&rxStateBand1,0);
 }
 
 static void taskUpdateRxMainBand2(timeUs_t currentTimeUs){
-    taskUpdateRxMain(currentTimeUs,&rxStateBand2);
+    taskUpdateRxMain(currentTimeUs,&rxStateBand2,1);
 }
 
 

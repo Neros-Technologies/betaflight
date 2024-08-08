@@ -63,12 +63,18 @@
 
 #define CRSF_FRAME_ERROR_COUNT_THRESHOLD    3
 
-STATIC_UNIT_TESTED bool crsfFrameDone = false;
-STATIC_UNIT_TESTED crsfFrame_t crsfFrameBand1;
-STATIC_UNIT_TESTED crsfFrame_t crsfChannelDataFrame;
-STATIC_UNIT_TESTED uint32_t crsfChannelData[CRSF_MAX_CHANNEL];
+STATIC_UNIT_TESTED bool crsfFrameDoneBand1 = false;
+STATIC_UNIT_TESTED bool crsfFrameDoneBand2 = false;
 
-static serialPort_t *serialPort;
+STATIC_UNIT_TESTED crsfFrame_t crsfFrameBand1;
+STATIC_UNIT_TESTED crsfFrame_t crsfFrameBand2;
+STATIC_UNIT_TESTED crsfFrame_t crsfChannelDataFrameBand1;
+STATIC_UNIT_TESTED crsfFrame_t crsfChannelDataFrameBand2;
+STATIC_UNIT_TESTED uint32_t crsfChannelDataBand1[CRSF_MAX_CHANNEL];
+STATIC_UNIT_TESTED uint32_t crsfChannelDataBand2[CRSF_MAX_CHANNEL];
+
+static serialPort_t *serialPortBand1;
+static serialPort_t *serialPortBand2;
 static timeUs_t crsfFrameStartAtUs = 0;
 static uint8_t telemetryBuf[CRSF_FRAME_SIZE_MAX];
 static uint8_t telemetryBufLen = 0;
@@ -233,11 +239,11 @@ static void handleCrsfLinkStatisticsFrame(const crsfLinkStatistics_t* statsPtr, 
         setRssiBand1(rssiPercentScaled, RSSI_SOURCE_RX_PROTOCOL_CRSF);
     }
 #ifdef USE_RX_RSSI_DBM
-    setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+    setRssiDbmBand1(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
 #endif
 
 #ifdef USE_RX_RSNR
-    setRsnr(stats.uplink_SNR);
+    setRsnrBand1(stats.uplink_SNR);
 #endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -277,11 +283,11 @@ static void handleCrsfLinkStatisticsTxFrame(const crsfLinkStatisticsTx_t* statsP
     }
 #ifdef USE_RX_RSSI_DBM
     int16_t rssiDbm = -1 * stats.uplink_RSSI;
-    setRssiDbm(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+    setRssiDbmBand1(rssiDbm, RSSI_SOURCE_RX_PROTOCOL_CRSF);
 #endif
 
 #ifdef USE_RX_RSNR
-    setRsnr(stats.uplink_SNR);
+    setRsnrBand1(stats.uplink_SNR);
 #endif
 
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -306,10 +312,10 @@ static void crsfCheckRssi(uint32_t currentTimeUs)
         if (rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) {
             setRssiDirectBand1(0, RSSI_SOURCE_RX_PROTOCOL_CRSF);
 #ifdef USE_RX_RSSI_DBM
-            setRssiDbmDirect(CRSF_RSSI_MIN, RSSI_SOURCE_RX_PROTOCOL_CRSF);
+            setRssiDbmDirectBand1(CRSF_RSSI_MIN, RSSI_SOURCE_RX_PROTOCOL_CRSF);
 #endif
 #ifdef USE_RX_RSNR
-            setRsnrDirect(CRSF_SNR_MIN);
+            setRsnrDirectBand1(CRSF_SNR_MIN);
 #endif
         }
 #ifdef USE_RX_LINK_QUALITY_INFO
@@ -321,7 +327,7 @@ static void crsfCheckRssi(uint32_t currentTimeUs)
 }
 #endif
 
-STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
+STATIC_UNIT_TESTED uint8_t crsfFrameCRCBand1(void)
 {
     // CRC includes type and payload
     uint8_t crc = crc8_dvb_s2(0, crsfFrameBand1.frame.type);
@@ -331,13 +337,35 @@ STATIC_UNIT_TESTED uint8_t crsfFrameCRC(void)
     return crc;
 }
 
+
+STATIC_UNIT_TESTED uint8_t crsfFrameCRCBand2(void)
+{
+    // CRC includes type and payload
+    uint8_t crc = crc8_dvb_s2(0, crsfFrameBand2.frame.type);
+    for (int ii = 0; ii < crsfFrameBand2.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC; ++ii) {
+        crc = crc8_dvb_s2(crc, crsfFrameBand2.frame.payload[ii]);
+    }
+    return crc;
+}
+
+
 #if defined(USE_CRSF_V3) || defined(UNIT_TEST)
-STATIC_UNIT_TESTED uint8_t crsfFrameCmdCRC(void)
+STATIC_UNIT_TESTED uint8_t crsfFrameCmdCRCBand1(void)
 {
     // CRC includes type and payload
     uint8_t crc = crc8_poly_0xba(0, crsfFrameBand1.frame.type);
     for (int ii = 0; ii < crsfFrameBand1.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC - 1; ++ii) {
         crc = crc8_poly_0xba(crc, crsfFrameBand1.frame.payload[ii]);
+    }
+    return crc;
+}
+
+STATIC_UNIT_TESTED uint8_t crsfFrameCmdCRCBand2(void)
+{
+    // CRC includes type and payload
+    uint8_t crc = crc8_poly_0xba(0, crsfFrameBand2.frame.type);
+    for (int ii = 0; ii < crsfFrameBand2.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC - 1; ++ii) {
+        crc = crc8_poly_0xba(crc, crsfFrameBand2.frame.payload[ii]);
     }
     return crc;
 }
@@ -382,7 +410,7 @@ STATIC_UNIT_TESTED void crsfDataReceiveBand1(uint16_t c, void *data)
         crsfFrameBand1.bytes[crsfFramePosition++] = (uint8_t)c;
         if (crsfFramePosition >= fullFrameLength) {
             crsfFramePosition = 0;
-            const uint8_t crc = crsfFrameCRC();
+            const uint8_t crc = crsfFrameCRCBand1();
             if (crc == crsfFrameBand1.bytes[fullFrameLength - 1]) {
 #if defined(USE_CRSF_V3)
                 crsfFrameErrorCnt = 0;
@@ -392,8 +420,8 @@ STATIC_UNIT_TESTED void crsfDataReceiveBand1(uint16_t c, void *data)
                 case CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED:
                     if (crsfFrameBand1.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) {
                         rxRuntimeState->lastRcFrameTimeUs = currentTimeUs;
-                        crsfFrameDone = true;
-                        memcpy(&crsfChannelDataFrame, &crsfFrameBand1, sizeof(crsfFrameBand1));
+                        crsfFrameDoneBand1 = true;
+                        memcpy(&crsfChannelDataFrameBand1, &crsfFrameBand1, sizeof(crsfFrameBand1));
                     }
                     break;
 
@@ -446,7 +474,7 @@ STATIC_UNIT_TESTED void crsfDataReceiveBand1(uint16_t c, void *data)
 #endif
 #if defined(USE_CRSF_V3)
                 case CRSF_FRAMETYPE_COMMAND:
-                    if ((crsfFrameBand1.bytes[fullFrameLength - 2] == crsfFrameCmdCRC()) &&
+                    if ((crsfFrameBand1.bytes[fullFrameLength - 2] == crsfFrameCmdCRCBand1()) &&
                         (crsfFrameBand1.bytes[3] == CRSF_ADDRESS_FLIGHT_CONTROLLER)) {
                         crsfProcessCommand(crsfFrameBand1.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE);
                     }
@@ -475,41 +503,177 @@ STATIC_UNIT_TESTED void crsfDataReceiveBand1(uint16_t c, void *data)
     }
 }
 
-STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
+
+STATIC_UNIT_TESTED void crsfDataReceiveBand2(uint16_t c, void *data)
+{
+    rxRuntimeState_t *const rxRuntimeState = (rxRuntimeState_t *const)data;
+
+    static uint8_t crsfFramePosition = 0;
+#if defined(USE_CRSF_V3)
+    static uint8_t crsfFrameErrorCnt = 0;
+#endif
+    const timeUs_t currentTimeUs = microsISR();
+
+#ifdef DEBUG_CRSF_PACKETS
+    debug[2] = currentTimeUs - crsfFrameStartAtUs;
+#endif
+
+    if (cmpTimeUs(currentTimeUs, crsfFrameStartAtUs) > CRSF_TIME_NEEDED_PER_FRAME_US) {
+        // We've received a character after max time needed to complete a frame,
+        // so this must be the start of a new frame.
+#if defined(USE_CRSF_V3)
+        if (crsfFramePosition > 0) {
+            // count an error if full valid frame not received within the allowed time.
+            crsfFrameErrorCnt++;
+        }
+#endif
+        crsfFramePosition = 0;
+    }
+
+    if (crsfFramePosition == 0) {
+        crsfFrameStartAtUs = currentTimeUs;
+    }
+    // assume frame is 5 bytes long until we have received the frame length
+    // full frame length includes the length of the address and framelength fields
+    // sometimes we can receive some garbage data. So, we need to check max size for preventing buffer overrun.
+    const int fullFrameLength = crsfFramePosition < 3 ? 5 : MIN(crsfFrameBand2.frame.frameLength + CRSF_FRAME_LENGTH_ADDRESS + CRSF_FRAME_LENGTH_FRAMELENGTH, CRSF_FRAME_SIZE_MAX);
+
+    if (crsfFramePosition < fullFrameLength) {
+        crsfFrameBand2.bytes[crsfFramePosition++] = (uint8_t)c;
+        if (crsfFramePosition >= fullFrameLength) {
+            crsfFramePosition = 0;
+            const uint8_t crc = crsfFrameCRCBand2();
+            if (crc == crsfFrameBand2.bytes[fullFrameLength - 1]) {
+#if defined(USE_CRSF_V3)
+                crsfFrameErrorCnt = 0;
+#endif
+                switch (crsfFrameBand2.frame.type) {
+                case CRSF_FRAMETYPE_RC_CHANNELS_PACKED:
+                case CRSF_FRAMETYPE_SUBSET_RC_CHANNELS_PACKED:
+                    if (crsfFrameBand2.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) {
+                        rxRuntimeState->lastRcFrameTimeUs = currentTimeUs;
+                        crsfFrameDoneBand2 = true;
+                        memcpy(&crsfChannelDataFrameBand2, &crsfFrameBand2, sizeof(crsfFrameBand2));
+                    }
+                    break;
+
+#if defined(USE_TELEMETRY_CRSF) && defined(USE_MSP_OVER_TELEMETRY)
+                case CRSF_FRAMETYPE_MSP_REQ:
+                case CRSF_FRAMETYPE_MSP_WRITE: {
+                    uint8_t *frameStart = (uint8_t *)&crsfFrameBand1.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                    if (bufferCrsfMspFrame(frameStart, crsfFrameBand1.frame.frameLength - 4)) {
+                        crsfScheduleMspResponse(crsfFrameBand1.frame.payload[1]);
+                    }
+                    break;
+                }
+#endif
+#if defined(USE_CRSF_CMS_TELEMETRY)
+                case CRSF_FRAMETYPE_DEVICE_PING:
+                    crsfScheduleDeviceInfoResponse();
+                    break;
+                case CRSF_FRAMETYPE_DISPLAYPORT_CMD: {
+                    uint8_t *frameStart = (uint8_t *)&crsfFrameBand1.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE;
+                    crsfProcessDisplayPortCmd(frameStart);
+                    break;
+                }
+#endif
+#if defined(USE_CRSF_LINK_STATISTICS)
+
+                case CRSF_FRAMETYPE_LINK_STATISTICS: {
+                    // if to FC and 10 bytes + CRSF_FRAME_ORIGIN_DEST_SIZE
+                    if ((rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) &&
+                        (crsfFrameBand2.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) &&
+                        (crsfFrameBand2.frame.frameLength == CRSF_FRAME_ORIGIN_DEST_SIZE + CRSF_FRAME_LINK_STATISTICS_PAYLOAD_SIZE)) {
+                        const crsfLinkStatistics_t* statsFrame = (const crsfLinkStatistics_t*)&crsfFrameBand2.frame.payload;
+                        handleCrsfLinkStatisticsFrame(statsFrame, currentTimeUs);
+                    }
+                    break;
+                }
+#if defined(USE_CRSF_V3)
+                case CRSF_FRAMETYPE_LINK_STATISTICS_RX: {
+                    break;
+                }
+                case CRSF_FRAMETYPE_LINK_STATISTICS_TX: {
+                    if ((rssiSource == RSSI_SOURCE_RX_PROTOCOL_CRSF) &&
+                        (crsfFrameBand2.frame.deviceAddress == CRSF_ADDRESS_FLIGHT_CONTROLLER) &&
+                        (crsfFrameBand2.frame.frameLength == CRSF_FRAME_ORIGIN_DEST_SIZE + CRSF_FRAME_LINK_STATISTICS_TX_PAYLOAD_SIZE)) {
+                        const crsfLinkStatisticsTx_t* statsFrame = (const crsfLinkStatisticsTx_t*)&crsfFrameBand2.frame.payload;
+                        handleCrsfLinkStatisticsTxFrame(statsFrame, currentTimeUs);
+                    }
+                    break;
+                }
+#endif
+#endif
+#if defined(USE_CRSF_V3)
+                case CRSF_FRAMETYPE_COMMAND:
+                    if ((crsfFrameBand2.bytes[fullFrameLength - 2] == crsfFrameCmdCRCBand2()) &&
+                        (crsfFrameBand2.bytes[3] == CRSF_ADDRESS_FLIGHT_CONTROLLER)) {
+                        crsfProcessCommand(crsfFrameBand2.frame.payload + CRSF_FRAME_ORIGIN_DEST_SIZE);
+                    }
+                    break;
+#endif
+                default:
+                    break;
+                }
+            } else {
+#if defined(USE_CRSF_V3)
+                if (crsfFrameErrorCnt < CRSF_FRAME_ERROR_COUNT_THRESHOLD)
+                    crsfFrameErrorCnt++;
+#endif
+            }
+        }
+#if defined(USE_CRSF_V3)
+        if (crsfBaudNegotiationInProgress() || isEepromWriteInProgress()) {
+            // don't count errors when negotiation or eeprom write is in progress
+            crsfFrameErrorCnt = 0;
+        } else if (crsfFrameErrorCnt >= CRSF_FRAME_ERROR_COUNT_THRESHOLD) {
+            // fall back to default speed if speed mismatch detected
+            setCrsfDefaultSpeed();
+            crsfFrameErrorCnt = 0;
+        }
+#endif
+    }
+}
+
+
+
+
+
+STATIC_UNIT_TESTED uint8_t crsfFrameStatusBand1(rxRuntimeState_t *rxRuntimeState)
 {
     UNUSED(rxRuntimeState);
 
 #if defined(USE_CRSF_LINK_STATISTICS)
     crsfCheckRssi(micros());
 #endif
-    if (crsfFrameDone) {
-        crsfFrameDone = false;
+    if (crsfFrameDoneBand1) {
+        crsfFrameDoneBand1 = false;
 
         // unpack the RC channels
-        if (crsfChannelDataFrame.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
+        if (crsfChannelDataFrameBand1.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
             // use ordinary RC frame structure (0x16)
-            const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfChannelDataFrame.frame.payload;
+            const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfChannelDataFrameBand1.frame.payload;
             channelScale = CRSF_RC_CHANNEL_SCALE_LEGACY;
-            crsfChannelData[0] = rcChannels->chan0;
-            crsfChannelData[1] = rcChannels->chan1;
-            crsfChannelData[2] = rcChannels->chan2;
-            crsfChannelData[3] = rcChannels->chan3;
-            crsfChannelData[4] = rcChannels->chan4;
-            crsfChannelData[5] = rcChannels->chan5;
-            crsfChannelData[6] = rcChannels->chan6;
-            crsfChannelData[7] = rcChannels->chan7;
-            crsfChannelData[8] = rcChannels->chan8;
-            crsfChannelData[9] = rcChannels->chan9;
-            crsfChannelData[10] = rcChannels->chan10;
-            crsfChannelData[11] = rcChannels->chan11;
-            crsfChannelData[12] = rcChannels->chan12;
-            crsfChannelData[13] = rcChannels->chan13;
-            crsfChannelData[14] = rcChannels->chan14;
-            crsfChannelData[15] = rcChannels->chan15;
+            crsfChannelDataBand1[0] = rcChannels->chan0;
+            crsfChannelDataBand1[1] = rcChannels->chan1;
+            crsfChannelDataBand1[2] = rcChannels->chan2;
+            crsfChannelDataBand1[3] = rcChannels->chan3;
+            crsfChannelDataBand1[4] = rcChannels->chan4;
+            crsfChannelDataBand1[5] = rcChannels->chan5;
+            crsfChannelDataBand1[6] = rcChannels->chan6;
+            crsfChannelDataBand1[7] = rcChannels->chan7;
+            crsfChannelDataBand1[8] = rcChannels->chan8;
+            crsfChannelDataBand1[9] = rcChannels->chan9;
+            crsfChannelDataBand1[10] = rcChannels->chan10;
+            crsfChannelDataBand1[11] = rcChannels->chan11;
+            crsfChannelDataBand1[12] = rcChannels->chan12;
+            crsfChannelDataBand1[13] = rcChannels->chan13;
+            crsfChannelDataBand1[14] = rcChannels->chan14;
+            crsfChannelDataBand1[15] = rcChannels->chan15;
         } else {
             // use subset RC frame structure (0x17)
             uint8_t readByteIndex = 0;
-            const uint8_t *payload = crsfChannelDataFrame.frame.payload;
+            const uint8_t *payload = crsfChannelDataFrameBand1.frame.payload;
 
             // get the configuration byte
             uint8_t configByte = payload[readByteIndex++];
@@ -551,7 +715,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
             configByte >>= CRSF_SUBSET_RC_RESERVED_CONFIGURATION_BITS;
 
             // calculate the number of channels packed
-            uint8_t numOfChannels = ((crsfChannelDataFrame.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC - 1) * 8) / channelBits;
+            uint8_t numOfChannels = ((crsfChannelDataFrameBand1.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC - 1) * 8) / channelBits;
 
             // unpack the channel data
             uint8_t bitsMerged = 0;
@@ -562,7 +726,7 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
                     readValue |= ((uint32_t) readByte) << bitsMerged;
                     bitsMerged += 8;
                 }
-                crsfChannelData[startChannel + n] = readValue & channelMask;
+                crsfChannelDataBand1[startChannel + n] = readValue & channelMask;
                 readValue >>= channelBits;
                 bitsMerged -= channelBits;
             }
@@ -572,7 +736,104 @@ STATIC_UNIT_TESTED uint8_t crsfFrameStatus(rxRuntimeState_t *rxRuntimeState)
     return RX_FRAME_PENDING;
 }
 
-STATIC_UNIT_TESTED float crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
+STATIC_UNIT_TESTED uint8_t crsfFrameStatusBand2(rxRuntimeState_t *rxRuntimeState)
+{
+    UNUSED(rxRuntimeState);
+
+#if defined(USE_CRSF_LINK_STATISTICS)
+    crsfCheckRssi(micros());
+#endif
+    if (crsfFrameDoneBand2) {
+        crsfFrameDoneBand2 = false;
+
+        // unpack the RC channels
+        if (crsfChannelDataFrameBand2.frame.type == CRSF_FRAMETYPE_RC_CHANNELS_PACKED) {
+            // use ordinary RC frame structure (0x16)
+            const crsfPayloadRcChannelsPacked_t* const rcChannels = (crsfPayloadRcChannelsPacked_t*)&crsfChannelDataFrameBand2.frame.payload;
+            channelScale = CRSF_RC_CHANNEL_SCALE_LEGACY;
+            crsfChannelDataBand2[0] = rcChannels->chan0;
+            crsfChannelDataBand2[1] = rcChannels->chan1;
+            crsfChannelDataBand2[2] = rcChannels->chan2;
+            crsfChannelDataBand2[3] = rcChannels->chan3;
+            crsfChannelDataBand2[4] = rcChannels->chan4;
+            crsfChannelDataBand2[5] = rcChannels->chan5;
+            crsfChannelDataBand2[6] = rcChannels->chan6;
+            crsfChannelDataBand2[7] = rcChannels->chan7;
+            crsfChannelDataBand2[8] = rcChannels->chan8;
+            crsfChannelDataBand2[9] = rcChannels->chan9;
+            crsfChannelDataBand2[10] = rcChannels->chan10;
+            crsfChannelDataBand2[11] = rcChannels->chan11;
+            crsfChannelDataBand2[12] = rcChannels->chan12;
+            crsfChannelDataBand2[13] = rcChannels->chan13;
+            crsfChannelDataBand2[14] = rcChannels->chan14;
+            crsfChannelDataBand2[15] = rcChannels->chan15;
+        } else {
+            // use subset RC frame structure (0x17)
+            uint8_t readByteIndex = 0;
+            const uint8_t *payload = crsfChannelDataFrameBand2.frame.payload;
+
+            // get the configuration byte
+            uint8_t configByte = payload[readByteIndex++];
+
+            // get the channel number of start channel
+            uint8_t startChannel = configByte & CRSF_SUBSET_RC_STARTING_CHANNEL_MASK;
+            configByte >>= CRSF_SUBSET_RC_STARTING_CHANNEL_BITS;
+
+            // get the channel resolution settings
+            uint8_t channelBits;
+            uint16_t channelMask;
+            uint8_t channelRes = configByte & CRSF_SUBSET_RC_RES_CONFIGURATION_MASK;
+            configByte >>= CRSF_SUBSET_RC_RES_CONFIGURATION_BITS;
+            switch (channelRes) {
+            case CRSF_SUBSET_RC_RES_CONF_10B:
+                channelBits = CRSF_SUBSET_RC_RES_BITS_10B;
+                channelMask = CRSF_SUBSET_RC_RES_MASK_10B;
+                channelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_10B;
+                break;
+            default:
+            case CRSF_SUBSET_RC_RES_CONF_11B:
+                channelBits = CRSF_SUBSET_RC_RES_BITS_11B;
+                channelMask = CRSF_SUBSET_RC_RES_MASK_11B;
+                channelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_11B;
+                break;
+            case CRSF_SUBSET_RC_RES_CONF_12B:
+                channelBits = CRSF_SUBSET_RC_RES_BITS_12B;
+                channelMask = CRSF_SUBSET_RC_RES_MASK_12B;
+                channelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_12B;
+                break;
+            case CRSF_SUBSET_RC_RES_CONF_13B:
+                channelBits = CRSF_SUBSET_RC_RES_BITS_13B;
+                channelMask = CRSF_SUBSET_RC_RES_MASK_13B;
+                channelScale = CRSF_SUBSET_RC_CHANNEL_SCALE_13B;
+                break;
+            }
+
+            // do nothing for the reserved configuration bit
+            configByte >>= CRSF_SUBSET_RC_RESERVED_CONFIGURATION_BITS;
+
+            // calculate the number of channels packed
+            uint8_t numOfChannels = ((crsfChannelDataFrameBand2.frame.frameLength - CRSF_FRAME_LENGTH_TYPE_CRC - 1) * 8) / channelBits;
+
+            // unpack the channel data
+            uint8_t bitsMerged = 0;
+            uint32_t readValue = 0;
+            for (uint8_t n = 0; n < numOfChannels; n++) {
+                while (bitsMerged < channelBits) {
+                    uint8_t readByte = payload[readByteIndex++];
+                    readValue |= ((uint32_t) readByte) << bitsMerged;
+                    bitsMerged += 8;
+                }
+                crsfChannelDataBand2[startChannel + n] = readValue & channelMask;
+                readValue >>= channelBits;
+                bitsMerged -= channelBits;
+            }
+        }
+        return RX_FRAME_COMPLETE;
+    }
+    return RX_FRAME_PENDING;
+}
+
+STATIC_UNIT_TESTED float crsfReadRawRCBand1(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
 {
     UNUSED(rxRuntimeState);
     if (channelScale == CRSF_RC_CHANNEL_SCALE_LEGACY) {
@@ -585,14 +846,37 @@ STATIC_UNIT_TESTED float crsfReadRawRC(const rxRuntimeState_t *rxRuntimeState, u
         * scale factor = (2012-988) / (1811-172) = 0.62477120195241
         * offset = 988 - 172 * 0.62477120195241 = 880.53935326418548
         */
-        return (channelScale * (float)crsfChannelData[chan]) + 881;
+        return (channelScale * (float)crsfChannelDataBand1[chan]) + 881;
     } else {
         /* conversion from RC value to PWM
         * for 0x17 Subset RC frame
         */
-        return (channelScale * (float)crsfChannelData[chan]) + 988;
+        return (channelScale * (float)crsfChannelDataBand1[chan]) + 988;
     }
 }
+
+STATIC_UNIT_TESTED float crsfReadRawRCBand2(const rxRuntimeState_t *rxRuntimeState, uint8_t chan)
+{
+    UNUSED(rxRuntimeState);
+    if (channelScale == CRSF_RC_CHANNEL_SCALE_LEGACY) {
+        /* conversion from RC value to PWM
+        * for 0x16 RC frame
+        *       RC     PWM
+        * min  172 ->  988us
+        * mid  992 -> 1500us
+        * max 1811 -> 2012us
+        * scale factor = (2012-988) / (1811-172) = 0.62477120195241
+        * offset = 988 - 172 * 0.62477120195241 = 880.53935326418548
+        */
+        return (channelScale * (float)crsfChannelDataBand2[chan]) + 881;
+    } else {
+        /* conversion from RC value to PWM
+        * for 0x17 Subset RC frame
+        */
+        return (channelScale * (float)crsfChannelDataBand2[chan]) + 988;
+    }
+}
+
 
 void crsfRxWriteTelemetryData(const void *data, int len)
 {
@@ -605,7 +889,7 @@ void crsfRxSendTelemetryData(void)
 {
     // if there is telemetry data to write
     if (telemetryBufLen > 0) {
-        serialWriteBuf(serialPort, telemetryBuf, telemetryBufLen);
+        serialWriteBuf(serialPortBand1, telemetryBuf, telemetryBufLen);
         telemetryBufLen = 0; // reset telemetry buffer
     }
 }
@@ -618,20 +902,34 @@ bool crsfRxIsTelemetryBufEmpty(void)
 bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, int band)
 {
     for (int ii = 0; ii < CRSF_MAX_CHANNEL; ++ii) {
-        crsfChannelData[ii] = (16 * rxConfig->midrc) / 10 - 1408;
+        if(band == 0){
+        crsfChannelDataBand1[ii] = (16 * rxConfig->midrc) / 10 - 1408;
+        } else {
+        crsfChannelDataBand2[ii] = (16 * rxConfig->midrc) / 10 - 1408;
+        }
     }
 
     rxRuntimeState->channelCount = CRSF_MAX_CHANNEL;
-    rxRuntimeState->rcReadRawFn = crsfReadRawRC;
-    rxRuntimeState->rcFrameStatusFn = crsfFrameStatus;
+    
+    
     if(band == 0){
         rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUsBand1;
+        rxRuntimeState->rcFrameStatusFn = crsfFrameStatusBand1;
+        rxRuntimeState->rcReadRawFn = crsfReadRawRCBand1;
     }
     else {
         rxRuntimeState->rcFrameTimeUsFn = rxFrameTimeUsBand2;
+        rxRuntimeState->rcFrameStatusFn = crsfFrameStatusBand2;
+        rxRuntimeState->rcReadRawFn = crsfReadRawRCBand2;
     }
 
-    const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    //FLAG
+    const serialPortConfig_t *portConfig;
+    if(band==0){
+        portConfig = findSerialPortConfig(FUNCTION_RX_SERIAL);
+    } else {
+        portConfig = findNextSerialPortConfig(FUNCTION_RX_SERIAL);
+    }
     if (!portConfig) {
         return false;
     }
@@ -643,7 +941,7 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, in
 #endif
     //TODO: FIGURE OUT HOW TO RECEIVE CRSF DATA ON TWO SEP STREAMS!
     if(band==0){
-    serialPort = openSerialPort(portConfig->identifier,
+    serialPortBand1 = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
         crsfDataReceiveBand1,
         rxRuntimeState,
@@ -653,9 +951,9 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, in
         );
     }
     else {
-        serialPort = openSerialPort(portConfig->identifier,
+        serialPortBand2 = openSerialPort(portConfig->identifier,
         FUNCTION_RX_SERIAL,
-        crsfDataReceiveBand1,
+        crsfDataReceiveBand2,
         rxRuntimeState,
         crsfBaudrate,
         CRSF_PORT_MODE,
@@ -671,14 +969,18 @@ bool crsfRxInit(const rxConfig_t *rxConfig, rxRuntimeState_t *rxRuntimeState, in
         linkQualitySource = LQ_SOURCE_RX_PROTOCOL_CRSF;
     }
 #endif
-
-    return serialPort != NULL;
+    if(band==0){
+        return serialPortBand1 != NULL;
+    } else {
+        return serialPortBand2 != NULL;
+    }
 }
 
 #if defined(USE_CRSF_V3)
 void crsfRxUpdateBaudrate(uint32_t baudrate)
 {
-    serialSetBaudRate(serialPort, baudrate);
+    serialSetBaudRate(serialPortBand1, baudrate);
+    serialSetBaudRate(serialPortBand2, baudrate);
     persistentObjectWrite(PERSISTENT_OBJECT_SERIALRX_BAUD, baudrate);
 }
 
@@ -690,6 +992,6 @@ bool crsfRxUseNegotiatedBaud(void)
 
 bool crsfRxIsActive(void)
 {
-    return serialPort != NULL;
+    return serialPortBand1 != NULL;
 }
 #endif

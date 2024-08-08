@@ -745,22 +745,21 @@ bool isAirmodeActivated(void)
 /*
  * processRx called from taskUpdateRxMain
  */
-bool processRx(timeUs_t currentTimeUs)
+bool processRx(timeUs_t currentTimeUs,int band)
 {
-    if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs)) {
+    if (!calculateRxChannelsAndUpdateFailsafe(currentTimeUs,band)) {
         return false;
     }
 
-    updateRcRefreshRate(currentTimeUs);
+    updateRcRefreshRate(currentTimeUs,band);
 
     // in 3D mode, we need to be able to disarm by switch at any time
     if (featureIsEnabled(FEATURE_3D)) {
         if (!IS_RC_MODE_ACTIVE(BOXARM))
             disarm(DISARM_REASON_SWITCH);
     }
-
-    updateRSSIBand1(currentTimeUs);
-    //updateRSSIBand2(currentTimeUs);
+    if(band==0) updateRSSIBand1(currentTimeUs);
+    else updateRSSIBand2(currentTimeUs);
 
     if (currentTimeUs > FAILSAFE_POWER_ON_DELAY_US && !failsafeIsMonitoring()) {
         failsafeStartMonitoring();

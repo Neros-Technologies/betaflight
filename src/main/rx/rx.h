@@ -182,7 +182,7 @@ void rxFrameCheckBand1(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 void rxFrameCheckBand2(timeUs_t currentTimeUs, timeDelta_t currentDeltaTimeUs);
 bool rxIsReceivingSignal(void);
 bool rxAreFlightChannelsValid(void);
-bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs);
+bool calculateRxChannelsAndUpdateFailsafe(timeUs_t currentTimeUs,int band);
 
 struct rxConfig_s;
 
@@ -213,15 +213,23 @@ uint16_t rxGetLinkQualityPercentBand1(void);
 uint16_t rxGetLinkQualityPercentBand2(void);
 
 #ifdef USE_RX_RSSI_DBM
-int16_t getRssiDbm(void);
-void setRssiDbm(int16_t newRssiDbm, rssiSource_e source);
-void setRssiDbmDirect(int16_t newRssiDbm, rssiSource_e source);
+int16_t getRssiDbmBand1(void);
+void setRssiDbmBand1(int16_t newRssiDbm, rssiSource_e source);
+void setRssiDbmDirectBand1(int16_t newRssiDbm, rssiSource_e source);
+
+int16_t getRssiDbmBand2(void);
+void setRssiDbmBand2(int16_t newRssiDbm, rssiSource_e source);
+void setRssiDbmDirectBand2(int16_t newRssiDbm, rssiSource_e source);
 #endif //USE_RX_RSSI_DBM
 
 #ifdef USE_RX_RSNR
-int16_t getRsnr(void);
-void setRsnr(int16_t newRsnr);
-void setRsnrDirect(int16_t newRsnr);
+int16_t getRsnrBand1(void);
+void setRsnrBand1(int16_t newRsnr);
+void setRsnrDirectBand1(int16_t newRsnr);
+
+int16_t getRsnrBand2(void);
+void setRsnrBand2(int16_t newRsnr);
+void setRsnrDirectBand2(int16_t newRsnr);
 #endif //USE_RX_RSNR
 
 void rxSetRfModeBand1(uint8_t rfModeValue);

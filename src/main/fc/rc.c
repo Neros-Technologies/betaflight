@@ -266,13 +266,18 @@ static void scaleRawSetpointToFpvCamAngle(void)
     rawSetpoint[YAW]  = constrainf(yaw  * cosFactor + roll * sinFactor, -SETPOINT_RATE_LIMIT * 1.0f, SETPOINT_RATE_LIMIT * 1.0f);
 }
 
-void updateRcRefreshRate(timeUs_t currentTimeUs)
+void updateRcRefreshRate(timeUs_t currentTimeUs, int band)
 {
     static timeUs_t lastRxTimeUs;
 
     timeDelta_t frameAgeUs;
-    //TODO: CHECK THIS
-    timeDelta_t frameDeltaUs = rxGetFrameDeltaBand1(&frameAgeUs);
+    
+    timeDelta_t frameDeltaUs;
+    if(band==0){
+        frameDeltaUs = rxGetFrameDeltaBand1(&frameAgeUs);
+    } else {
+        frameDeltaUs = rxGetFrameDeltaBand2(&frameAgeUs);
+    }
 
     if (!frameDeltaUs || cmpTimeUs(currentTimeUs, lastRxTimeUs) <= frameAgeUs) {
         frameDeltaUs = cmpTimeUs(currentTimeUs, lastRxTimeUs); // calculate a delta here if not supplied by the protocol
