@@ -21,7 +21,7 @@ H743xI_TARGETS += $(TARGET)
 
 CUSTOM_DEFAULTS_EXTENDED = yes
 
-FEATURES       += VCP SDCARD_SPI SDCARD_SDIO ONBOARDFLASH
+FEATURES       += VCP SDCARD_SPI SDCARD_SDIO ONBOARDFLASH OSD_SD
 
 TARGET_SRC = \
 	$(addprefix drivers/accgyro/,$(notdir $(wildcard $(SRC_DIR)/drivers/accgyro/*.c))) \

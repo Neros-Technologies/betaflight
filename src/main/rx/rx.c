@@ -770,23 +770,23 @@ void detectAndApplySignalLossBehaviour(void)
     }
     
     //GLEB ADDITION:  LISTEN FOR RX ON A SWITCH. KEEP TRACK OF SWITCH TIME ONLY IF WE JUST MADE THIS SWITCH IN CHANNELS
-    if(lastRCdata == 0){
-        lastRCdata = rcData[11];
-    }
-    if (rxFlightChannelsValid && (ABS(rcData[11] - lastRCdata) > 500)){
-        slctRx= !slctRx;
-        pinioSet(2, slctRx);
-    } 
-    lastRCdata = rcData[11];
-    uint16_t currLQ = rxGetLinkQuality();
-    if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && ((currLQ < 20) || (justSwitched && ((lastChannelLQ-currLQ) > 10))) && (currentTimeMs - startTimeMs > 5000)){
-            slctRx= !slctRx;
-            pinioSet(2, slctRx);
-            lastChannelLQ = rxGetLinkQuality();
-            justSwitched=true;
-    } else {
-        justSwitched = false;
-    }
+    // if(lastRCdata == 0){
+    //     lastRCdata = rcData[11];
+    // }
+    // if (rxFlightChannelsValid && (ABS(rcData[11] - lastRCdata) > 500)){
+    //     slctRx= !slctRx;
+    //     pinioSet(2, slctRx);
+    // } 
+    //lastRCdata = rcData[11];
+    //uint16_t currLQ = rxGetLinkQuality();
+    // if((linkQualitySource == LQ_SOURCE_RX_PROTOCOL_CRSF) && ((currLQ < 20) || (justSwitched && ((lastChannelLQ-currLQ) > 10))) && (currentTimeMs - startTimeMs > 5000)){
+    //         slctRx= !slctRx;
+    //         pinioSet(2, slctRx);
+    //         lastChannelLQ = rxGetLinkQuality();
+    //         justSwitched=true;
+    // } else {
+    //     justSwitched = false;
+    // }
 
     if (rxFlightChannelsValid) {
         failsafeOnValidDataReceived();
