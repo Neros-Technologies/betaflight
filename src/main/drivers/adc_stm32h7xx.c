@@ -284,6 +284,8 @@ void adcInit(const adcConfig_t *config)
     memset(adcOperatingConfig, 0, sizeof(adcOperatingConfig));
     memcpy(adcDevice, adcHardware, sizeof(adcDevice));
 
+    adcOperatingConfig[ADC_NTEMP].tag = config->ntemp.ioTag;
+
     if (config->vbat.enabled) {
         adcOperatingConfig[ADC_BATTERY].tag = config->vbat.ioTag;
         adcOperatingConfig[ADC_BATTERY].adcDevice = config->vbat.device;
