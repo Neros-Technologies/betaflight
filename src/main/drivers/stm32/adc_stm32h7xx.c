@@ -294,14 +294,14 @@ void adcInit(const adcConfig_t *config)
         adcOperatingConfig[ADC_RSSI].adcDevice = config->rssi.device;
     }
 
-    if (config->external1.enabled) {
-        adcOperatingConfig[ADC_EXTERNAL1].tag = config->external1.ioTag; //EXTERNAL1_ADC_CHANNEL;
-        adcOperatingConfig[ADC_EXTERNAL1].adcDevice = config->external1.device;
-    }
-
     if (config->current.enabled) {
         adcOperatingConfig[ADC_CURRENT].tag = config->current.ioTag;  //CURRENT_METER_ADC_CHANNEL;
         adcOperatingConfig[ADC_CURRENT].adcDevice = config->current.device;
+    }
+
+    if (config->ntemp.enabled) {
+        adcOperatingConfig[ADC_NTEMP].tag = config->ntemp.ioTag; 
+        adcOperatingConfig[ADC_NTEMP].adcDevice = config->ntemp.device;
     }
 
 #ifdef USE_ADC_INTERNAL

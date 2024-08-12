@@ -67,18 +67,6 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
 #endif
 #endif
 
-#ifdef ADC_EXTERNAL1_PIN
-    adcConfig->external1.enabled = true;
-    adcConfig->external1.ioTag = IO_TAG(ADC_EXTERNAL1_PIN);
-#if defined(STM32H7)
-#ifdef ADC_EXTERNAL1_INSTANCE
-    adcConfig->external1.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_EXTERNAL1_INSTANCE));
-#else
-    adcConfig->external1.device = adcConfig->device;
-#endif
-#endif
-#endif
-
 #ifdef ADC_CURR_PIN
     adcConfig->current.enabled = true;
     adcConfig->current.ioTag = IO_TAG(ADC_CURR_PIN);
@@ -87,6 +75,18 @@ void pgResetFn_adcConfig(adcConfig_t *adcConfig)
     adcConfig->current.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_CURR_INSTANCE));
 #else
     adcConfig->current.device = adcConfig->device;
+#endif
+#endif
+#endif
+
+#ifdef ADC_NTEMP_PIN
+adcConfig->ntemp.enabled = true;
+adcConfig->ntemp.ioTag = IO_TAG(ADC_NTEMP_PIN);
+#if defined(STM32H7)
+#ifdef ADC_NTEMP_INSTANCE
+    adcConfig->ntemp.device = ADC_DEV_TO_CFG(adcDeviceByInstance(ADC_NTEMP_INSTANCE));
+#else
+    adcConfig->ntemp.device = adcConfig->device;
 #endif
 #endif
 #endif

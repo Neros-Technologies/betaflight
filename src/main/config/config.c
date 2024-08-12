@@ -400,6 +400,7 @@ static void validateAndFixConfig(void)
 #endif
 
 #ifdef USE_ADC
+    adcConfigMutable()->ntemp.enabled = true;
     adcConfigMutable()->vbat.enabled = (batteryConfig()->voltageMeterSource == VOLTAGE_METER_ADC);
     adcConfigMutable()->current.enabled = (batteryConfig()->currentMeterSource == CURRENT_METER_ADC);
 

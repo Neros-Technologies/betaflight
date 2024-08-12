@@ -918,10 +918,26 @@ static void osdElementCrosshairs(osdElementParms_t *element)
     element->buff[3] = 0;
 }
 
+//GLEB ADDITION. CHANGING THIS TO USE ROLLING AVERAGE OVER 3 SECONDS
+#define MOVING_AVERAGE_SIZE 20
+
+float amperageBuffer[MOVING_AVERAGE_SIZE] = {0};
+float voltageBuffer[MOVING_AVERAGE_SIZE] = {0};
+float amperageSum = 0;
+float voltageSum = 0;
+static int bufferIndex = 0;
+static int readingsCount = 0;
+static float lastValue = 0;
+float avgAmps = 0;
+float avgVolts = 0;
+float amperageShown = 0;
+
 static void osdElementCurrentDraw(osdElementParms_t *element)
 {
-    const float amperage = fabsf(getAmperage() / 100.0f);
-    osdPrintFloat(element->buff, SYM_NONE, amperage, "%3u", 2, false, SYM_AMP);
+    if(bufferIndex == 5) {
+        amperageShown= avgAmps;
+    }
+    osdPrintFloat(element->buff, SYM_NONE, amperageShown, "%3u", 2, false, SYM_AMP);
 }
 
 static void osdElementDebug(osdElementParms_t *element)
@@ -986,32 +1002,10 @@ static void osdElementOsdProfileName(osdElementParms_t *element)
 }
 #endif
 
-#if defined(USE_ESC_SENSOR) ||  defined(USE_DSHOT_TELEMETRY)
 
 static void osdElementEscTemperature(osdElementParms_t *element)
 {
-#if defined(USE_ESC_SENSOR)
-    if (featureIsEnabled(FEATURE_ESC_SENSOR)) {
-        tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdEscDataCombined->temperature), osdGetTemperatureSymbolForSelectedUnit());
-    } else
-#endif
-#if defined(USE_DSHOT_TELEMETRY)
-    {
-        uint32_t osdEleIx = tfp_sprintf(element->buff, "E%c", SYM_TEMPERATURE);
-
-        for (uint8_t k = 0; k < getMotorCount(); k++) {
-            if ((dshotTelemetryState.motorState[k].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_TEMPERATURE)) != 0) {
-                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "%3d%c",
-                    osdConvertTemperatureToSelectedUnit(dshotTelemetryState.motorState[k].telemetryData[DSHOT_TELEMETRY_TYPE_TEMPERATURE]),
-                    osdGetTemperatureSymbolForSelectedUnit());
-            } else {
-                osdEleIx += tfp_sprintf(element->buff + osdEleIx, "  0%c", osdGetTemperatureSymbolForSelectedUnit());
-            }
-        }
-    }
-#else
-    {}
-#endif
+    tfp_sprintf(element->buff, "E%c%3d%c", SYM_TEMPERATURE, osdConvertTemperatureToSelectedUnit(osdTempValue), osdGetTemperatureSymbolForSelectedUnit());
 }
 
 static void osdElementEscRpm(osdElementParms_t *element)
@@ -1024,7 +1018,6 @@ static void osdElementEscRpmFreq(osdElementParms_t *element)
     renderOsdEscRpmOrFreq(&getEscRpmFreq,element);
 }
 
-#endif
 
 static void osdElementFlymode(osdElementParms_t *element)
 {
@@ -1079,30 +1072,20 @@ static void osdElementGpsFlightDistance(osdElementParms_t *element)
     }
 }
 
+//GLEB ADDITION. TAKING OVER THIS METHOD TO ESTIMATE RANGE
 static void osdElementGpsHomeDirection(osdElementParms_t *element)
-{
-    if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
-        if (GPS_distanceToHome > 0) {
-            int direction = GPS_directionToHome;
-#ifdef USE_GPS_LAP_TIMER
-            // Override the "home" point to the start/finish location if the lap timer is running
-            if (gpsLapTimerData.timerRunning) {
-                direction = lrintf(gpsLapTimerData.dirToPoint * 0.1f); // Convert from centidegree to degree and round to nearest
-            }
-#endif
-            element->buff[0] = osdGetDirectionSymbolFromHeading(DECIDEGREES_TO_DEGREES(direction - attitude.values.yaw));
-        } else {
-            element->buff[0] = SYM_OVER_HOME;
-        }
-
-    } else {
-        // We use this symbol when we don't have a FIX
-        element->buff[0] = SYM_HYPHEN;
+{  
+    if(ARMING_FLAG(ARMED) && STATE(GPS_FIX) && GPS_distanceFlownInCm > 1000){
+        int32_t batteryUsed = getMAhDrawn();
+        int32_t batteryLeft = batteryConfig()->batteryCapacity - batteryUsed;
+        float efficiency = GPS_distanceFlownInCm / ((float)batteryUsed+0.000001);
+        float estimatedRangeLeft = (float)batteryLeft * efficiency;
+        osdPrintFloat(element->buff, SYM_NONE, constrainf(estimatedRangeLeft/100000.0, 0, 50), "%2u", 2, false, SYM_KM);
+    } else{
+        tfp_sprintf(element->buff, "NO ESTIMATE");
     }
-
-    element->buff[1] = 0;
+    
 }
-
 static void osdElementGpsHomeDistance(osdElementParms_t *element)
 {
     if (STATE(GPS_FIX) && STATE(GPS_FIX_HOME)) {
@@ -1484,9 +1467,38 @@ static void osdElementPidsYaw(osdElementParms_t *element)
     osdFormatPID(element->buff, "YAW", PID_YAW);
 }
 
-static void osdElementPower(osdElementParms_t *element)
-{
-    tfp_sprintf(element->buff, "%4dW", getAmperage() * getBatteryVoltage() / 10000);
+//GLEB ADDITION
+static void osdElementPower(osdElementParms_t *element) {
+    // Get the current readings
+    float amps = fabsf(getAmperage() / 100.0f);
+    float volts = getBatteryVoltage() / 100.0f;
+
+    // Subtract the oldest reading from the sum and replace it with the new one
+    amperageSum -= amperageBuffer[bufferIndex];
+    voltageSum -= voltageBuffer[bufferIndex];
+    amperageBuffer[bufferIndex] = amps;
+    voltageBuffer[bufferIndex] = volts;
+    amperageSum += amps;
+    voltageSum += volts;
+
+    // Update the buffer index and ensure it wraps around
+    bufferIndex = (bufferIndex + 1) % MOVING_AVERAGE_SIZE;
+
+    // Update the count of readings until it reaches the buffer size
+    if (readingsCount < MOVING_AVERAGE_SIZE) {
+        readingsCount++;
+    }
+
+    // Calculate the moving averages
+    avgAmps = amperageSum / readingsCount;
+    avgVolts = voltageSum / readingsCount;
+
+    // Calculate power using the averages and display it
+
+    if(bufferIndex == 5) {
+        lastValue = avgVolts*avgAmps;
+    }
+    osdPrintFloat(element->buff, SYM_NONE, lastValue, "%3u", 2, false, SYM_WATT);
 }
 
 static void osdElementRcChannels(osdElementParms_t *element)

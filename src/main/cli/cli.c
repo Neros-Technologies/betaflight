@@ -5065,6 +5065,7 @@ const cliResourceValue_t resourceTable[] = {
     DEFS( OWNER_ADC_RSSI,      PG_ADC_CONFIG, adcConfig_t, rssi.ioTag ),
     DEFS( OWNER_ADC_CURR,      PG_ADC_CONFIG, adcConfig_t, current.ioTag ),
     DEFS( OWNER_ADC_EXT,       PG_ADC_CONFIG, adcConfig_t, external1.ioTag ),
+    DEFS( OWNER_ADC_NTEMP,      PG_ADC_CONFIG, adcConfig_t, ntemp.ioTag ),
 #endif
 #ifdef USE_BARO
     DEFS( OWNER_BARO_CS,       PG_BAROMETER_CONFIG, barometerConfig_t, baro_spi_csn ),
