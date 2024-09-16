@@ -69,6 +69,10 @@
 #define UNIFIED_SERIAL_PORT_COUNT       3
 
 #define USE_USB_DETECT
+//GLEB ADDITION
+#define USE_GPS
+#define USE_GPS_UBLOX
+#define USE_GPS_RESCUE
 
 #define USE_ESCSERIAL
 

@@ -1,9 +1,9 @@
-`# 
+# 
 
-# diff all`
+# diff all
 
 # version
-# Betaflight / STM32F411 (S411) 4.4.3 Jun  4 2024 / 18:28:26 (c5c31d7ee) MSP API: 1.45
+# Betaflight / STM32F411 (S411) 4.4.3 Jul 16 2024 / 16:14:34 (norevision) MSP API: 1.45
 
 # config: YES
 
@@ -15,7 +15,7 @@ defaults nosave
 
 board_name MATEKF411
 manufacturer_id MTKS
-mcu_id 004700313931501920363458
+mcu_id 0064003b3931501920363458
 signature 
 
 # name: Archer
@@ -95,13 +95,15 @@ dma pin A08 0
 # pin A08: DMA2 Stream 6 Channel 0
 
 # feature
+feature -ANTI_GRAVITY
 feature SERVO_TILT
 feature SOFTSERIAL
+feature GPS
 feature OSD
 
 # serial
 serial 0 64 115200 57600 0 115200
-serial 1 1024 115200 57600 0 115200
+serial 1 2 115200 57600 0 115200
 serial 30 2048 115200 57600 0 115200
 
 # servo
@@ -173,6 +175,7 @@ set beeper_od = OFF
 set beeper_dshot_beacon_tone = 3
 set yaw_motors_reversed = ON
 set small_angle = 180
+set gps_auto_baud = ON
 set pid_process_denom = 4
 set simplified_gyro_filter_multiplier = 80
 set osd_warn_bitmask = 8187

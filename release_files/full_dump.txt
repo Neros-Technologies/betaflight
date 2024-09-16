@@ -220,7 +220,7 @@ feature -RX_SERIAL
 feature -MOTOR_STOP
 feature -SERVO_TILT
 feature -SOFTSERIAL
-feature -GPS
+feature GPS
 feature -RANGEFINDER
 feature -TELEMETRY
 feature -3D
@@ -241,7 +241,7 @@ feature SERVO_TILT
 feature SOFTSERIAL
 feature OSD
 feature AIRMODE
-feature ANTI_GRAVITY
+feature -ANTI_GRAVITY
 
 # serial
 serial 20 1 115200 57600 0 115200
