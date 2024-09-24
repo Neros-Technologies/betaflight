@@ -1,4 +1,4 @@
-# 
+
 
 # diff all
 
@@ -15,7 +15,7 @@ defaults nosave
 
 board_name MATEKF411
 manufacturer_id MTKS
-mcu_id 0037003b3931501920363458
+mcu_id 004000353931501920363458
 signature 
 
 # name: Archer
@@ -95,7 +95,6 @@ dma pin A08 0
 # pin A08: DMA2 Stream 6 Channel 0
 
 # feature
-feature -ANTI_GRAVITY
 feature SERVO_TILT
 feature SOFTSERIAL
 feature GPS
@@ -188,7 +187,7 @@ set osd_crosshairs_pos = 14574
 set osd_craft_name_pos = 364
 set osd_gps_lon_pos = 14817
 set osd_gps_lat_pos = 14785
-set osd_gps_sats_pos = 2465
+set osd_gps_sats_pos = 14753
 set osd_home_dir_pos = 14414
 set osd_home_dist_pos = 14380
 set osd_compass_bar_pos = 11
@@ -241,6 +240,7 @@ set i_yaw = 62
 set f_yaw = 179
 set d_min_roll = 46
 set d_min_pitch = 58
+set motor_output_limit = 70
 set thrust_linear = 20
 set dyn_idle_min_rpm = 35
 set simplified_master_multiplier = 120
